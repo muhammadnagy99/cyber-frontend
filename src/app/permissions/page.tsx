@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
@@ -16,7 +16,7 @@ interface Permission {
 
 const fetcher = (url: string) =>
   fetch(url, {
-    headers: { "Authorization": `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IjY0YjZlYmEwM2RlZWE2ZTVjMjZjMTg1NDQ3ZmE4MDNjIn0.eyJzdWIiOiIyOTcyMTUxOTE5IiwibmFtZSI6IkJJR0JPU1MiLCJpYXQiOjEzMjEyMzEzMjEzMjF9.zN7mG-0pI2EBE2wsXu9jsdfud4uiqBiZDPgxrE0e2mJ4sD_CdesyQPANeEYp6c7log4haM8XbeMVr7P54oO-bQ` },
+    headers: { "Authorization": `Bearer YOUR_BEARER_TOKEN` },
   }).then((res) => res.json());
 
 const Button = ({ children, onClick, disabled }: { children: string; onClick: () => void; disabled?: boolean }) => (
@@ -30,13 +30,19 @@ const Button = ({ children, onClick, disabled }: { children: string; onClick: ()
 );
 
 const Card = ({ title, highlighted }: { title: string; highlighted?: boolean }) => (
-  <div className={`p-4 border rounded-md shadow-md ${highlighted ? "bg-blue-100" : ""}`}>
+  <div className={`p-4 border rounded-md shadow-md ${highlighted ? "bg-blue-100" : "bg-gray-200"}`}>
     <h3 className="font-bold">{title}</h3>
   </div>
 );
 
 const RoleSelector = ({ selectedRole, onRoleSelect }: { selectedRole: string; onRoleSelect: (role: string) => void }) => {
-  const { data: roles, error } = useSWR("http://localhost:8080/roles", fetcher);
+  const { data: roles, error } = useSWR("http://localhost:8080//roles", fetcher);
+
+  useEffect(() => {
+    if (roles && roles.length > 0 && !selectedRole) {
+      onRoleSelect(roles[0].id);
+    }
+  }, [roles, selectedRole, onRoleSelect]);
 
   if (error) return <p className="text-red-500">Failed to load roles</p>;
   if (!roles) return <p>Loading roles...</p>;
@@ -66,23 +72,21 @@ export default function PermissionsPage() {
     if (roleFromUrl) setSelectedRole(roleFromUrl);
   }, [roleFromUrl]);
 
-  const { data: permissions, error: permError } = useSWR("http://localhost:8080/permissions", fetcher);
+  const { data: permissions, error: permError } = useSWR("http://localhost:8080//permissions", fetcher);
   const { data: rolePermissions, error: rolePermError } = useSWR(
-    selectedRole ? `http://localhost:8080/roles/${selectedRole}/permissions` : null,
+    selectedRole ? `http://localhost:8080//roles/${selectedRole}/permissions` : null,
     fetcher
   );
 
   if (permError || rolePermError) return <p className="text-red-500">Failed to load permissions</p>;
   if (!permissions || !rolePermissions) return <p>Loading permissions...</p>;
 
-  const assignedPermissions = new Set(rolePermissions.permissions);
+  const assignedPermissions = new Set(rolePermissions?.permissions || []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <h1 className="text-2xl font-bold mb-4">Permissions</h1>
-      <Suspense fallback={<p>Loading roles...</p>}>
-        <RoleSelector selectedRole={selectedRole} onRoleSelect={(newRole) => router.push(`/permissions?role=${newRole}`)} />
-      </Suspense>
+      <RoleSelector selectedRole={selectedRole} onRoleSelect={(newRole) => router.push(`/permissions?role=${newRole}`)} />
       <div className="grid grid-cols-2 gap-4 mt-4">
         {permissions.map((perm: Permission) => (
           <Card key={perm.id} title={perm.name} highlighted={assignedPermissions.has(perm.id)} />
