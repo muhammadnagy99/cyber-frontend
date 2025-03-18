@@ -32,7 +32,7 @@ const Card = ({ title, children, highlighted }: { title: string; children?: Reac
 );
 
 const RoleSelector = ({ selectedRole, onRoleSelect }: { selectedRole: string; onRoleSelect: (role: string) => void }) => {
-  const { data: roles, error } = useSWR("http://localhost:8080//roles", fetcher);
+  const { data: roles, error } = useSWR("https://nagy.services/api/roles", fetcher);
 
   useEffect(() => {
     if (roles && roles.length > 0 && !selectedRole) {

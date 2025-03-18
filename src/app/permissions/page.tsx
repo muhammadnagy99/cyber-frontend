@@ -36,7 +36,7 @@ const Card = ({ title, highlighted }: { title: string; highlighted?: boolean }) 
 );
 
 const RoleSelector = ({ selectedRole, onRoleSelect }: { selectedRole: string; onRoleSelect: (role: string) => void }) => {
-  const { data: roles, error } = useSWR("http://localhost:8080/roles", fetcher);
+  const { data: roles, error } = useSWR("https://nagy.services/api/roles", fetcher);
 
   useEffect(() => {
     if (roles && roles.length > 0 && !selectedRole) {
@@ -72,9 +72,9 @@ function PermissionsContent() {
     if (roleFromUrl) setSelectedRole(roleFromUrl);
   }, [roleFromUrl]);
 
-  const { data: permissions, error: permError } = useSWR("http://localhost:8080/permissions", fetcher);
+  const { data: permissions, error: permError } = useSWR("https://nagy.services/api/permissions", fetcher);
   const { data: rolePermissions, error: rolePermError } = useSWR(
-    selectedRole ? `http://localhost:8080/roles/${selectedRole}/permissions` : null,
+    selectedRole ? `https://nagy.services/api/roles/${selectedRole}/permissions` : null,
     fetcher
   );
 
