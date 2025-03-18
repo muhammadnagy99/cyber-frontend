@@ -36,7 +36,7 @@ const Card = ({ title, highlighted }: { title: string; highlighted?: boolean }) 
 );
 
 const RoleSelector = ({ selectedRole, onRoleSelect }: { selectedRole: string; onRoleSelect: (role: string) => void }) => {
-  const { data: roles, error } = useSWR("http://localhost:8000/roles", fetcher);
+  const { data: roles, error } = useSWR("http://localhost:8080/roles", fetcher);
 
   if (error) return <p className="text-red-500">Failed to load roles</p>;
   if (!roles) return <p>Loading roles...</p>;
@@ -66,9 +66,9 @@ export default function PermissionsPage() {
     if (roleFromUrl) setSelectedRole(roleFromUrl);
   }, [roleFromUrl]);
 
-  const { data: permissions, error: permError } = useSWR("http://localhost:8000/permissions", fetcher);
+  const { data: permissions, error: permError } = useSWR("http://localhost:8080/permissions", fetcher);
   const { data: rolePermissions, error: rolePermError } = useSWR(
-    selectedRole ? `http://localhost:8000/roles/${selectedRole}/permissions` : null,
+    selectedRole ? `http://localhost:8080/roles/${selectedRole}/permissions` : null,
     fetcher
   );
 
