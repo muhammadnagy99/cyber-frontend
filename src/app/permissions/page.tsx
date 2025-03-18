@@ -1,10 +1,15 @@
 'use client';
 
 import { useState, Suspense, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
 interface Role {
+  id: string;
+  name: string;
+}
+
+interface Permission {
   id: string;
   name: string;
 }
@@ -24,21 +29,14 @@ const Button = ({ children, onClick, disabled }: { children: string; onClick: ()
   </button>
 );
 
-const Card = ({ title, children, highlighted }: { title: string; children?: React.ReactNode; highlighted?: boolean }) => (
-  <div className={`p-4 border rounded-md shadow-md ${highlighted ? "bg-blue-100" : "bg-gray-200"}`}>
+const Card = ({ title, highlighted }: { title: string; highlighted?: boolean }) => (
+  <div className={`p-4 border rounded-md shadow-md ${highlighted ? "bg-blue-100" : ""}`}>
     <h3 className="font-bold">{title}</h3>
-    <div>{children}</div>
   </div>
 );
 
 const RoleSelector = ({ selectedRole, onRoleSelect }: { selectedRole: string; onRoleSelect: (role: string) => void }) => {
-  const { data: roles, error } = useSWR("http://localhost:8000//roles", fetcher);
-
-  useEffect(() => {
-    if (roles && roles.length > 0 && !selectedRole) {
-      onRoleSelect(roles[0].id);
-    }
-  }, [roles, selectedRole, onRoleSelect]);
+  const { data: roles, error } = useSWR("http://localhost:8000/roles", fetcher);
 
   if (error) return <p className="text-red-500">Failed to load roles</p>;
   if (!roles) return <p>Loading roles...</p>;
@@ -57,27 +55,39 @@ const RoleSelector = ({ selectedRole, onRoleSelect }: { selectedRole: string; on
     </select>
   );
 };
-export default function Home() {
-  const [selectedRole, setSelectedRole] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+
+export default function PermissionsPage() {
+  const searchParams = useSearchParams();
+  const roleFromUrl = searchParams.get("role") || "";
+  const [selectedRole, setSelectedRole] = useState(roleFromUrl);
   const router = useRouter();
 
-  const handleSignIn = async () => {
-    setLoading(true);
-    setTimeout(() => {
-      router.push(`/permissions?role=${selectedRole}`);
-    }, 1000);
-  };
+  useEffect(() => {
+    if (roleFromUrl) setSelectedRole(roleFromUrl);
+  }, [roleFromUrl]);
+
+  const { data: permissions, error: permError } = useSWR("http://localhost:8000/permissions", fetcher);
+  const { data: rolePermissions, error: rolePermError } = useSWR(
+    selectedRole ? `http://localhost:8000/roles/${selectedRole}/permissions` : null,
+    fetcher
+  );
+
+  if (permError || rolePermError) return <p className="text-red-500">Failed to load permissions</p>;
+  if (!permissions || !rolePermissions) return <p>Loading permissions...</p>;
+
+  const assignedPermissions = new Set(rolePermissions.permissions);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h1 className="text-2xl font-bold mb-4">Select Role</h1>
+      <h1 className="text-2xl font-bold mb-4">Permissions</h1>
       <Suspense fallback={<p>Loading roles...</p>}>
-      <RoleSelector selectedRole={selectedRole} onRoleSelect={(newRole) => setSelectedRole(newRole)} />
+        <RoleSelector selectedRole={selectedRole} onRoleSelect={(newRole) => router.push(`/permissions?role=${newRole}`)} />
       </Suspense>
-      <Button onClick={handleSignIn} disabled={loading || !selectedRole}>
-        {loading ? "Signing In..." : "Sign In"}
-      </Button>
+      <div className="grid grid-cols-2 gap-4 mt-4">
+        {permissions.map((perm: Permission) => (
+          <Card key={perm.id} title={perm.name} highlighted={assignedPermissions.has(perm.id)} />
+        ))}
+      </div>
     </div>
   );
 }
