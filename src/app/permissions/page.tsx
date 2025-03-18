@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
@@ -16,7 +16,7 @@ interface Permission {
 
 const fetcher = (url: string) =>
   fetch(url, {
-    headers: { "Authorization": `Bearer YOUR_BEARER_TOKEN` },
+    headers: { "Authorization": `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IjY0YjZlYmEwM2RlZWE2ZTVjMjZjMTg1NDQ3ZmE4MDNjIn0.eyJzdWIiOiIyOTcyMTUxOTE5IiwibmFtZSI6IkJJR0JPU1MiLCJpYXQiOjEzMjEyMzEzMjEzMjF9.zN7mG-0pI2EBE2wsXu9jsdfud4uiqBiZDPgxrE0e2mJ4sD_CdesyQPANeEYp6c7log4haM8XbeMVr7P54oO-bQ` },
   }).then((res) => res.json());
 
 const Button = ({ children, onClick, disabled }: { children: string; onClick: () => void; disabled?: boolean }) => (
@@ -36,7 +36,7 @@ const Card = ({ title, highlighted }: { title: string; highlighted?: boolean }) 
 );
 
 const RoleSelector = ({ selectedRole, onRoleSelect }: { selectedRole: string; onRoleSelect: (role: string) => void }) => {
-  const { data: roles, error } = useSWR("http://localhost:8080//roles", fetcher);
+  const { data: roles, error } = useSWR("http://localhost:8080/roles", fetcher);
 
   useEffect(() => {
     if (roles && roles.length > 0 && !selectedRole) {
@@ -62,7 +62,7 @@ const RoleSelector = ({ selectedRole, onRoleSelect }: { selectedRole: string; on
   );
 };
 
-export default function PermissionsPage() {
+function PermissionsContent() {
   const searchParams = useSearchParams();
   const roleFromUrl = searchParams.get("role") || "";
   const [selectedRole, setSelectedRole] = useState(roleFromUrl);
@@ -72,9 +72,9 @@ export default function PermissionsPage() {
     if (roleFromUrl) setSelectedRole(roleFromUrl);
   }, [roleFromUrl]);
 
-  const { data: permissions, error: permError } = useSWR("http://localhost:8080//permissions", fetcher);
+  const { data: permissions, error: permError } = useSWR("http://localhost:8080/permissions", fetcher);
   const { data: rolePermissions, error: rolePermError } = useSWR(
-    selectedRole ? `http://localhost:8080//roles/${selectedRole}/permissions` : null,
+    selectedRole ? `http://localhost:8080/roles/${selectedRole}/permissions` : null,
     fetcher
   );
 
@@ -93,5 +93,13 @@ export default function PermissionsPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function PermissionsPage() {
+  return (
+    <Suspense fallback={<p>Loading permissions...</p>}>
+      <PermissionsContent />
+    </Suspense>
   );
 }
