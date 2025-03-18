@@ -30,7 +30,7 @@ const Button = ({ children, onClick, disabled }: { children: string; onClick: ()
 );
 
 const Card = ({ title, highlighted }: { title: string; highlighted?: boolean }) => (
-  <div className={`p-4 border rounded-md shadow-md ${highlighted ? "bg-blue-100" : "bg-gray-200"}`}>
+  <div className={`p-4 border rounded-md shadow-md ${highlighted ? "bg-blue-100" : ""}`}>
     <h3 className="font-bold">{title}</h3>
   </div>
 );
